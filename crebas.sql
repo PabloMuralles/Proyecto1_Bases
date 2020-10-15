@@ -4,23 +4,24 @@
 /*==============================================================*/
 
 
---drop database if exists BookFace
+drop database if exists BookFace
 
---drop table if exists "COMMENT";
+drop table if exists "COMMENT";
 
---drop table if exists DEVICE;
+drop table if exists DEVICE;
 
---drop table if exists FRIENSHIP;
+drop table if exists FRIENSHIP;
 
---drop table if exists INTERACTION;
+drop table if exists INTERACTION;
 
---drop table if exists POST;
+drop table if exists POST;
 
---drop table if exists TYPE;
+drop table if exists TYPE;
 
---drop table if exists "USER";
+drop table if exists "USER";
 
---create database BookFace
+create database BookFace
+
 /*==============================================================*/
 /* Table: "COMMENT"                                             */
 /*==============================================================*/
@@ -33,6 +34,7 @@ create table "COMMENT"
    DEVICEIP             varchar(15)                    not null,
    COMMENTDATETIME      datetime                       not null,
    COMMENTCONTENT       varchar(200)                   not null,
+   STATUS				bit							   not null
    constraint PK_COMMENT primary key clustered (COMMENTID)
 );
 
@@ -105,7 +107,7 @@ create table "USER"
    FIRSTNAME            varchar(50)                    not null,
    MIDDLENAME           varchar(50)                    null,
    LASTNAME             varchar(50)                    not null,
-   EMAILADDRES          varchar(50)                    not null,
+   EMAILADDRES          varchar(50)     UNIQUE         not null,
    BIRTHDATE            date                           not null,
    MAXFRIENDS           int                            not null,
    constraint PK_USER primary key clustered (USERID)
