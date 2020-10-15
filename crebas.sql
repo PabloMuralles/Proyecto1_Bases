@@ -51,9 +51,9 @@ create table DEVICE
 /*==============================================================*/
 create table FRIENDSHIP 
 (
-   FRIENDSHIPID         int				 IDENTITY(1,1) not null,
+   FRIENDSHIPID         int		 IDENTITY(1,1) not null,
    USERID               int                            not null,
-   FRIENDID				int							   not null,
+   FRIENDID		int			       not null,
    constraint PK_FRIENDSHIP primary key clustered (FRIENDSHIPID)
 );
 
@@ -62,7 +62,7 @@ create table FRIENDSHIP
 /*==============================================================*/
 create table INTERACTION 
 (
-   INTERACTIONID        int				 IDENTITY(1,1) not null,
+   INTERACTIONID        int		 IDENTITY(1,1) not null,
    USERID               int                            not null,
    POSTID               int                            not null,
    DEVICEIP             varchar(15)                    not null,
@@ -157,5 +157,3 @@ alter table POST
 alter table POST
    add constraint FK_POST_REFERENCE_TYPE foreign key (TYPEID)
       references TYPE (TYPEID)
-  
-
