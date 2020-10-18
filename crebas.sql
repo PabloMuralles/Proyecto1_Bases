@@ -103,11 +103,11 @@ create table "USER"
 (
    USERID               int              IDENTITY(1,1) not null,
    FIRSTNAME            varchar(50)                    not null,
-   MIDDLENAME           varchar(50)                    null,
+   MIDDLENAME           varchar(50)                        null,
    LASTNAME             varchar(50)                    not null,
    EMAILADDRES          varchar(50)                    not null,
    BIRTHDATE            date                           not null,
-   MAXFRIENDS           int                            not null,
+   MAXFRIENDS           int  default 50                not null,
    constraint PK_USER primary key clustered (USERID)
 );
 
