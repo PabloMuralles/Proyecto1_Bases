@@ -163,3 +163,44 @@ as
 	begin
 		print 'El comentario ' + CAST(@commentid as varchar) + ' no existe.'
 	end
+-----------------------------------------------------------------------------------------------------------------------------------------
+create or alter TRIGGER Comments_tiCommentsValidation
+on COMMENT 
+instead of insert 
+AS
+DECLARE @idPost int,
+        @idUser int,
+		@deviceIp varchar(15),
+		@dateTime datetime,
+		@idFriend int,
+		@qty int,
+		@content varchar(200),
+		@deviceId int
+
+
+	select @idFriend = P.USERID 
+	from inserted i 
+	inner join POST P on P.POSTID = i.POSTID
+
+	print CAST(@idFriend as varchar)
+
+	SELECT @idPost = USERID, @idUser = POSTID,@deviceId = DEVICEID ,@deviceIp = DEVICEIP, @dateTime = COMMENTDATETIME, @content = COMMENTCONTENT
+	FROM inserted
+
+	-- PRINT CAST(@idUser as varchar)  
+
+	select @qty = COUNT(1) 
+	from FRIENDSHIP
+	where (USERID = @idUser and FRIENDID = @idFriend) or (USERID = @idFriend and FRIENDID = @idUser)
+	
+	PRINT CAST(@qty as varchar)  
+
+	if (@qty = 1)
+	begin
+		insert into COMMENT values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@content)
+	end 
+	else
+	begin
+		 PRINT CAST(@idUser as varchar) + ' /'   + CAST(@idPost as varchar) + '/ ' + CAST(@idFriend as varchar)
+		 print 'No se puede realizar la accion'
+	end
