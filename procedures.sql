@@ -51,6 +51,7 @@ as
 				insert into FRIENDSHIP values (@id,@userid)
 				FETCH NEXT FROM c_create_friendship into @id
 			end
+			drop table temp
 			close c_create_friendship
 			deallocate c_create_friendship
 	end
@@ -163,3 +164,118 @@ as
 	begin
 		print 'El comentario ' + CAST(@commentid as varchar) + ' no existe.'
 	end
+----------------------------------------------------------------
+--trigger para validar las inserciones de las interacciones
+ create or alter trigger Interaction_tiInteractionValidation
+on INTERACTION 
+instead of insert 
+AS
+DECLARE @idPost int,
+        @idUser int,
+		@isLike bit,
+        @interactionRegister int,
+		@deviceIp varchar(15),
+		@dateTime datetime,
+		@idFriend int,
+		@qty int
+
+
+	SELECT @idPost = USERID, @idUser = POSTID, @isLike = ISLIKE, @deviceIp = DEVICEIP, @dateTime = INTERECTIONDATETIME
+	FROM inserted
+
+	select @idFriend = USERID
+	from POST
+	where POSTID = @idPost
+
+	select @qty = COUNT(1) 
+	from FRIENDSHIP
+	where (USERID = @idUser and FRIENDID = @idFriend) or (USERID = @idFriend and FRIENDID = @idUser)
+ 
+
+	select @interactionRegister = COUNT(1)
+	from INTERACTION 
+	where POSTID  = @idPost and USERID = @idUser
+
+	if (@interactionRegister is null and @qty = 1)
+	begin
+		insert into INTERACTION values (@idUser,@idPost,@deviceIp,@dateTime,@isLike)
+	end 
+	else
+	begin
+		if(@qty != 1)
+		begin 
+			print 'Los usuarios no son amigos'
+		end 
+		else 
+		begin 
+			print 'Ya existe una interaccion'
+		end
+	end
+----------------------------------------------------------------
+--trigger para verificar la insercion de los comentarios
+create or alter trigger Comments_tiCommentsValidation
+on COMMENT 
+instead of insert 
+AS
+DECLARE @idPost int,
+        @idUser int,
+		@deviceIp varchar(15),
+		@dateTime datetime,
+		@idFriend int,
+		@qty int,
+		@content varchar(200),
+		@deviceId int
+
+	SELECT @idPost = USERID, @idUser = POSTID,@deviceId = DEVICEID ,@deviceIp = DEVICEIP, @dateTime = COMMENTDATETIME, @content = COMMENTCONTENT
+	FROM inserted
+
+	select @idFriend = USERID
+	from POST
+	where POSTID = @idPost
+
+	print CAST(@idFriend as varchar)
+
+	select @qty = COUNT(1) 
+	from FRIENDSHIP
+	where (USERID = @idUser and FRIENDID = @idFriend) or (USERID = @idFriend and FRIENDID = @idUser)
+
+
+	if (@qty = 1)
+	begin
+		insert into COMMENT values (@idPost,@idUser,@deviceId,@deviceIp,@dateTime,@content)
+	end 
+	else
+	begin
+		 
+		 print 'No se puede realizar la accion'
+	end
+----------------------------------------------------------------
+--Procedure to add one to max_friends of users that have posts
+--with 15 likes or more in a given day
+create or alter procedure pincrement_max_friends
+as
+	declare @userid int
+	declare @maxfriends int
+
+	drop table if exists temp2
+	select U.USERID, U.MAXFRIENDS into temp2 from "USER" U
+	inner join POST P on P.USERID = U.USERID
+	inner join INTERACTION I on I.POSTID = P.POSTID
+	where (DAY(P.POSTDATETIME) = DAY(GETDATE())) and (I.ISLIKE = 1)
+	group by U.USERID, U.MAXFRIENDS, P.POSTID
+	having COUNT(P.POSTID) >= 15
+	
+	declare c_inc_friends cursor for 
+	select USERID from temp2
+	open c_inc_friends
+	fetch c_inc_friends into @userid
+	while (@@FETCH_STATUS = 0)
+		begin
+			select @maxfriends = MAXFRIENDS from "USER" where USERID = @userid
+			update "USER" set MAXFRIENDS = @maxfriends + 1
+			where USERID = @userid
+			FETCH NEXT FROM c_inc_friends into @userid
+		end
+	drop table temp2
+	close c_inc_friends
+	deallocate c_inc_friends
