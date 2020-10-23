@@ -279,3 +279,71 @@ as
 	drop table temp2
 	close c_inc_friends
 	deallocate c_inc_friends
+-------------------------------------------------------------------------
+-- procedimiento para las inserciones de interaciones(comentario o likes)
+-- si like o dislike es nulo y el contenido del comentario no lo es inserta el comentario si es al reves inseta un like o dislile
+create or alter procedure Interacton_upsinsertion
+@pUserId int, 
+@pPostId int,
+@pDeviceId int,
+@pDeviceIp varchar(15),
+@pIsLike bit,
+@pComment varchar(200)
+as
+begin
+	if(@pIsLike is not null and @pComment is null)
+	begin
+				if(@pIsLike = 0)
+				begin
+					set transaction isolation level serializable
+
+					begin tran;
+
+					declare @cantidadM int
+					declare @cantidadN int 
+
+					select @cantidadM = COUNT(1) 
+					from INTERACTION
+					where ISLIKE = 1 and POSTID = @pPostId
+					
+
+					select @cantidadN = COUNT(1) 
+					from INTERACTION
+					where ISLIKE = 0 and POSTID = @pPostId
+					
+
+					if (@cantidadN < @cantidadM)
+					begin 
+						insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
+						commit;
+					end 
+					else
+					begin
+						print 'La cantidad de me gusta no es sufienta para insertar un no me gusta'
+						commit;
+					end 
+				end
+				else
+				begin
+					insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
+				end 
+	end
+	else
+	begin
+				set transaction isolation level serializable
+
+				begin tran;
+
+				if((select COUNT(1) from "COMMENT" where POSTID = 1 and ACTIVE = 1) >= 3)
+				begin
+					INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,0)
+					commit;
+				end
+				else
+				begin 
+					INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,1)
+					commit;
+				end
+	end 
+
+end 

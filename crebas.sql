@@ -34,7 +34,7 @@ create table "COMMENT"
    DEVICEIP             varchar(15)                    not null,
    COMMENTDATETIME      datetime                       not null,
    COMMENTCONTENT       varchar(200)                   not null,
-   STATUS		bit			       not null
+   ACTIVE				bit							   not null
    constraint PK_COMMENT primary key clustered (COMMENTID)
 );
 
@@ -64,9 +64,10 @@ create table FRIENDSHIP
 /*==============================================================*/
 create table INTERACTION 
 (
-   INTERACTIONID        int		 IDENTITY(1,1) not null,
+    INTERACTIONID        int		 IDENTITY(1,1) not null,
    USERID               int                            not null,
    POSTID               int                            not null,
+   DIVICEID				int							   not null,
    DEVICEIP             varchar(15)                    not null,
    INTERACTIONDATETIME  datetime                       not null,
    ISLIKE               bit                            not null,
