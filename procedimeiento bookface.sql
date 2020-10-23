@@ -1,77 +1,100 @@
 create or alter procedure Interacton_upsinsertion
 @pUserId int, 
 @pPostId int,
-@pDeviceId varchar(15),
-@pInteraction bit
+@pDeviceId int,
+@pDeviceIp varchar(15),
+@pIsLike bit,
+@pComment varchar(200)
 as
 begin
-	
-	if(@pInteraction = 0)
+	if(@pIsLike is not null and @pComment is null)
 	begin
-		set transaction isolation level serializable
+				if(@pIsLike = 0)
+				begin
+					set transaction isolation level serializable
 
-		begin tran;
+					begin tran;
 
-		declare @cantidadM int
-		declare @cantidadN int 
+					declare @cantidadM int
+					declare @cantidadN int 
 
-		select @cantidadM = COUNT(1) 
-		from INTERACTION
-		where ISLIKE = 1 and POSTID = @pUserId
-		group by POSTID
+					select @cantidadM = COUNT(1) 
+					from INTERACTION
+					where ISLIKE = 1 and POSTID = @pPostId
+					
 
-		select @cantidadN = COUNT(1) 
-		from INTERACTION
-		where ISLIKE = 0 and POSTID = @pUserId
-		group by POSTID
+					select @cantidadN = COUNT(1) 
+					from INTERACTION
+					where ISLIKE = 0 and POSTID = @pPostId
+					
 
-		if (@cantidadN < @cantidadM)
-		begin 
-			insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId, GETDATE(), @pInteraction)
-			commit;
-		end 
-		else
-		begin
-			print 'La cantidad de me gusta no es sufienta para insertar un no me gusta'
-			commit;
-		end 
-
+					if (@cantidadN < @cantidadM)
+					begin 
+						insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
+						commit;
+					end 
+					else
+					begin
+						print 'La cantidad de me gusta no es sufienta para insertar un no me gusta'
+						commit;
+					end 
+				end
+				else
+				begin
+					insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
+				end 
 	end
 	else
 	begin
-		insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId, GETDATE(), @pInteraction)
+				set transaction isolation level serializable
+
+				begin tran;
+
+				if((select COUNT(1) from "COMMENT" where POSTID = 1 and ACTIVE = 1) >= 3)
+				begin
+					INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,0)
+					commit;
+				end
+				else
+				begin 
+					INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,1)
+					commit;
+				end
 	end 
 
 end 
 
+select COUNT(1)
+from "COMMENT"
+where POSTID = 1 and ACTIVE = 1
 
- 
+SELECT * FROM POST
+
+select *
+from "COMMENT"
+
+INSERT INTO COMMENT VALUES(1,2,1,'HOLA',GETDATE(),'HOLA',1)
+INSERT INTO COMMENT VALUES(1,3,1,'HOLA',GETDATE(),'HOLA',1)
+INSERT INTO COMMENT VALUES(1,4,1,'HOLA',GETDATE(),'HOLA',0)
+
+select * from INTERACTION
+
+exec Interacton_upsinsertion 4,1,1,'tumascara',null,'prueba buena'
+exec Interacton_upsinsertion 3,1,1,'tumascara',0,null
+exec Interacton_upsinsertion 1,1,1,'tumascara',1,null
+
+
 select COUNT(1) 
 from INTERACTION
-where ISLIKE = 1 and POSTID = 69
-group by POSTID
+where ISLIKE = 1 and POSTID = 1
+--group by POSTID
 
-select COUNT(1) 
+select  COUNT(1) 
 from INTERACTION
-where ISLIKE = 0 and POSTID = 69
-group by POSTID
+where ISLIKE = 0 and POSTID = 1
+--group by POSTID
 
-
-select * from INTERACTION where POSTID = 69
-
-delete from INTERACTION where INTERACTIONID = 126
-
-INSERT INTO INTERACTION VALUES(54,69,'Mercer','2001-10-17 05:08:55',1)
-INSERT INTO INTERACTION VALUES(1,69,'Mercer','2001-10-17 05:08:55',0)
-INSERT INTO INTERACTION VALUES(2,69,'Mercer','2001-10-17 05:08:55',0)
-INSERT INTO INTERACTION VALUES(3,69,'Mercer','2001-10-17 05:08:55',0)
-
-exec Interacton_upsinsertion 3,69,'ola',1
-
-exec Interacton_upsinsertion 50,69,'ola',1
-
-select * from POST where POSTID = 69
-
+delete from INTERACTION
 --- preguntarle a fercho si en las inserciones normales se tiene que hacer un triggre para validar eso----si
 -- preguntar si son dos procedimientos uno para likes y otro para comentarios---no
 -- que informacion debe de llevar los likes -- igual que los comentario 
