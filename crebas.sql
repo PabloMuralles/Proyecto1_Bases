@@ -28,8 +28,8 @@
 create table "COMMENT" 
 (
    COMMENTID            int              IDENTITY(1,1) not null,
-   POSTID               int                            not null,
    USERID               int                            not null,
+   POSTID               int                            not null,   
    DEVICEID             int                            not null,
    DEVICEIP             varchar(15)                    not null,
    COMMENTDATETIME      datetime                       not null,
@@ -161,7 +161,7 @@ alter table POST
    add constraint FK_POST_REFERENCE_TYPE foreign key (TYPEID)
       references TYPE (TYPEID)
 
------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
   --Data for user
   
 --insert into "TYPE" values ('Publicación')
