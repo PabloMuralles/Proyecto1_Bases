@@ -34,7 +34,7 @@ create table "COMMENT"
    DEVICEIP             varchar(15)                    not null,
    COMMENTDATETIME      datetime                       not null,
    COMMENTCONTENT       varchar(200)                   not null,
-   ACTIVE				bit							   not null
+   ACTIVE		bit			       not null
    constraint PK_COMMENT primary key clustered (COMMENTID)
 );
 
@@ -67,7 +67,7 @@ create table INTERACTION
    INTERACTIONID        int		 IDENTITY(1,1) not null,
    USERID               int                            not null,
    POSTID               int                            not null,
-   DEVICEID				int							   not null,
+   DEVICEID		int			       not null,
    DEVICEIP             varchar(15)                    not null,
    INTERACTIONDATETIME  datetime                       not null,
    ISLIKE               bit                            not null,
@@ -111,7 +111,7 @@ create table "USER"
    EMAILADDRESS         varchar(50)     UNIQUE         not null,
    BIRTHDATE            date                           not null,
    MAXFRIENDS           int  default 50                not null,
-   REGISTRATIONDATE		datetime					   not null,
+   REGISTRATIONDATE     datetime		       not null,
    constraint PK_USER primary key clustered (USERID)
 );
 
