@@ -99,6 +99,7 @@ delete from INTERACTION
 -- preguntar si son dos procedimientos uno para likes y otro para comentarios---no
 -- que informacion debe de llevar los likes -- igual que los comentario 
 
+
 ----------------------------------------------------------------------------------------------------------------------------------------------
 ---- actualizar para que cuando se meta la interacion opuesta del mismo usuario solo se actulice
 create or alter TRIGGER Interaction_tiInteractionValidation
@@ -131,7 +132,7 @@ DECLARE @idPost int,
 	from INTERACTION 
 	where POSTID  = @idPost and USERID = @idUser
 
-	if (@interactionRegister is null and @qty = 1)
+	if (@interactionRegister = 0 and @qty = 1)
 	begin
 		insert into INTERACTION values (@idUser,@idPost,@deviceIp,@dateTime,@isLike)
 	end 
@@ -163,6 +164,7 @@ insert into FRIENDSHIP values(1,3)
 insert into FRIENDSHIP values(2,3)
 
 ----------------------------------------------------------------------------------------------------------------------------------------
+--trigger para unicamente insertar los comentarios a publicaciones donde sean amigos
 create or alter TRIGGER Comments_tiCommentsValidation
 on COMMENT 
 instead of insert 
