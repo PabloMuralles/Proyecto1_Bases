@@ -19,3 +19,26 @@ begin
 		print 'No se han registrado nuevos usuarios en el día.'
 	end	
 end
+----------------------------------------------------------------
+--Reports likes between two dates, and if they are not specified
+--the report is from current day
+create or alter procedure plikes_history
+@postID int,
+@startDate date,
+@endDate date
+as
+begin
+    if (@startDate is null)
+    begin
+		select @startDate = GETDATE()
+    end
+
+    if (@endDate is null)
+    begin
+		select @endDate = GETDATE()
+    end
+
+    select INTERACTIONID, USERID, ISLIKE, INTERACTIONDATETIME
+    from INTERACTION
+    where (POSTID = @postID) and (INTERACTIONDATETIME between @startDate and @endDate)
+end
