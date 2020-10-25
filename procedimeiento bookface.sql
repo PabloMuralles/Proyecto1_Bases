@@ -100,7 +100,7 @@ delete from INTERACTION
 -- que informacion debe de llevar los likes -- igual que los comentario 
 
 
-----------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------
 ---- actualizar para que cuando se meta la interacion opuesta del mismo usuario solo se actulice
 create or alter TRIGGER Interaction_tiInteractionValidation
 on INTERACTION 
@@ -163,7 +163,7 @@ insert into FRIENDSHIP values(1,2)
 insert into FRIENDSHIP values(1,3)
 insert into FRIENDSHIP values(2,3)
 
-----------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 --trigger para unicamente insertar los comentarios a publicaciones donde sean amigos
 create or alter TRIGGER Comments_tiCommentsValidation
 on COMMENT 
@@ -218,4 +218,133 @@ DECLARE @idPost int,
 	where (USERID = 2 and FRIENDID = 1) or (USERID = 1 and FRIENDID = 2)
 
 
------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+create or alter procedure summary_upPost
+@pYear int
+as
+begin
+	declare @count int
+	set @count = 1;
+	declare @qty int
+
+	drop table if exists SUMMARYPOST;
+
+	create table SUMMARYPOST(Months varchar(20), Quantity int)
+
+	if(@pYear is not null)
+	begin
+		if(LEN(@pYear) = 4)
+		begin
+			while(@count <= 12)
+			begin 
+
+				select P.POSTID
+				into temp123
+				from POST P
+				inner join COMMENT C on P.POSTID = C.POSTID
+				where (MONTH(COMMENTDATETIME) = @count and YEAR(COMMENTDATETIME) =  @pYear )and ACTIVESTATUS = 1
+				group by P.POSTID
+				having COUNT(COMMENTID) = 3
+
+				select @qty = COUNT(1) from temp123
+
+				insert into SUMMARYPOST values(DATENAME(month, DATEADD(month, @count-1, CAST('2008-01-01' AS datetime))), @qty)
+
+				set @count = @count + 1 
+
+				drop table if exists temp123
+
+			end 
+		 select * from SUMMARYPOST
+		end
+		else
+		begin
+			print 'Wrong date format'
+		end
+	end
+	else 
+	begin
+		set @pYear = YEAR(GETDATE())
+		while(@count <= 12)
+			begin 
+
+				select P.POSTID
+				into temp123
+				from POST P
+				inner join COMMENT C on P.POSTID = C.POSTID
+				where (MONTH(COMMENTDATETIME) = @count and YEAR(COMMENTDATETIME) =  @pYear )and ACTIVESTATUS = 1
+				group by P.POSTID
+				having COUNT(COMMENTID) = 3
+
+				select @qty = COUNT(1) from temp123
+
+				insert into SUMMARYPOST values(DATENAME(month, DATEADD(month, @count-1, CAST('2008-01-01' AS datetime))), @qty)
+
+				set @count = @count + 1 
+
+				drop table if exists temp123
+
+
+			end 
+		 select * from SUMMARYPOST
+	end 
+end 
+----------------
+select COUNT(1)
+from POST  P
+inner join COMMENT C on P.POSTID = C.POSTID
+where MONTH(POSTDATETIME) = 1 and MONTH(COMMENTDATETIME) <= 1
+
+select P.POSTID,COUNT(distinct C.COMMENTID)
+from POST  P
+inner join COMMENT C on P.POSTID = C.POSTID
+where  MONTH(C.COMMENTDATETIME) <= 10 and C.ACTIVESTATUS = 1 
+group by P.POSTID
+having (COUNT(distinct C.COMMENTID)) = 3
+
+insert into COMMENT values (1,1,1,'asdf', GETDATE(), 'asdf',1)
+insert into COMMENT values (2,1,1,'asdf', GETDATE(), 'asdf',1)
+insert into COMMENT values (3,1,1,'asdf', GETDATE(), 'asdf',1)
+
+insert into COMMENT values (4,2,1,'asdf', GETDATE(), 'asdf',1)
+insert into COMMENT values (5,2,1,'asdf', GETDATE(), 'asdf',1)
+
+insert into COMMENT values (6,58,1,'asdf', GETDATE(), 'asdf',1)
+insert into COMMENT values (7,58,1,'asdf', GETDATE(), 'asdf',1)
+insert into COMMENT values (8,58,1,'asdf', GETDATE(), 'asdf',1)
+
+delete from COMMENT where COMMENTID = 2
+
+ select * from COMMENT where POSTID = 58
+
+select POSTID
+from COMMENT
+WHERE (MONTH(COMMENTDATETIME) <= 10 and YEAR(COMMENTDATETIME) = 2020 )and ACTIVESTATUS = 1
+group by POSTID
+having COUNT(COMMENTID) = 3
+
+select COUNT(POSTID)
+from COMMENT
+WHERE (MONTH(COMMENTDATETIME) <= 10 and YEAR(COMMENTDATETIME) = 2020 )and ACTIVESTATUS = 1
+group by POSTID
+having COUNT(COMMENTID) = 3
+
+
+select P.POSTID
+--into temp123
+from POST P
+inner join COMMENT C on P.POSTID = C.POSTID
+where (MONTH(COMMENTDATETIME) <= 10 and YEAR(COMMENTDATETIME) = 2020 )and ACTIVESTATUS = 1
+group by P.POSTID
+having COUNT(COMMENTID) = 3
+
+
+ exec summary_upPost 15425
+
+
+ select * from SUMMARYPOST
+
+ select * from COMMENT where MONTH(COMMENTDATETIME) = 10
+
+  select * from COMMENT where POSTID = 58
+  --------------------------------------------------------------------------------------------------------------------------------------------------------
