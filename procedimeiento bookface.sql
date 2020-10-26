@@ -17,7 +17,7 @@ begin
 	end 
 
 end 
-
+-----------------------
 select COUNT(1)
 from "COMMENT"
 where POSTID = 1 and ACTIVE = 1
@@ -78,6 +78,34 @@ delete from FRIENDSHIP where FRIENDSHIPID = 11
 select * from INTERACTION 
 
 select ISLIKE from INTERACTION where USERID = 3 and POSTID = 2
+----------------------------
+exec Interacton_upsinsertion 2,1,1,'fasdfm12',null,'hola'
+
+exec Interacton_upsinsertion 2,58,1,'fasdfm12',null,'hola'
+
+exec Interacton_upsinsertion 2,58,1,'fasdfm12',null,'hola'
+
+
+exec Interacton_upsinsertion  58,3,1,'fasdfm12',null,'hola'
+
+select * from COMMENT where POSTID = 3
+
+select * from POST where POSTID = 3
+
+
+insert into FRIENDSHIP values (41,58)
+
+select * from FRIENDSHIP
+
+select POSTID
+from "COMMENT"
+where ACTIVESTATUS = 1
+group by POSTID
+having (COUNT(1) < 3)
+
+--probamos que inserta 0 cuando ya hay 3 comentarios activos
+--probasmos que no se inserte si no son amigos
+--inserta correctamente cuando hay menos de 3 comentarios activos
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 ---- actualizar para que cuando se meta la interacion opuesta del mismo usuario solo se actulice
@@ -254,14 +282,14 @@ DECLARE @idPost int,
 
 	if (@qty = 1)
 	begin
-		if((select COUNT(1) from "COMMENT" where POSTID = 1 and ACTIVESTATUS = 1) >= 3)
+		if((select COUNT(1) from "COMMENT" where POSTID = @idPost and ACTIVESTATUS = 1) >= 3)
 		begin 
-			insert into COMMENT values (@idPost,@idUser,@deviceId,@deviceIp,@dateTime,@content,0)
+			insert into COMMENT values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@content,0)
 			commit;
 		end
 		else 
 		begin 
-			insert into COMMENT values (@idPost,@idUser,@deviceId,@deviceIp,@dateTime,@content,1)
+			insert into COMMENT values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@content,1)
 			commit;
 		end
 	end 
