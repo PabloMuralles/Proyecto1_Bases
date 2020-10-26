@@ -108,10 +108,10 @@ create table "USER"
    FIRSTNAME            varchar(50)                    not null,
    MIDDLENAME           varchar(50)                        null,
    LASTNAME             varchar(50)                    not null,
-   EMAILADDRESS         varchar(50)     UNIQUE         not null,
+   EMAILADDRESS         varchar(50)      UNIQUE        not null,
    BIRTHDATE            date                           not null,
    MAXFRIENDS           int  default 50                not null,
-   REGISTRATIONDATE     datetime		       not null,
+   REGISTRATIONDATE     datetime default GETDATE()     not null,
    constraint PK_USER primary key clustered (USERID)
 );
 
