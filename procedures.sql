@@ -181,7 +181,7 @@ as
 	end
 ----------------------------------------------------------------
 --trigger para validar las inserciones de las interacciones
- create or alter trigger Interaction_tiInteractionValidation
+  create or alter TRIGGER Interaction_tiInteractionValidation
 on INTERACTION 
 instead of insert 
 AS
@@ -189,13 +189,21 @@ DECLARE @idPost int,
         @idUser int,
 		@isLike bit,
         @interactionRegister int,
+		@deviceId int,
 		@deviceIp varchar(15),
 		@dateTime datetime,
 		@idFriend int,
-		@qty int
+		@qty int,
+		@cantidadM int,
+		@cantidadN int,
+		@tempInteraction bit,
+		@tempIdInteraction int
 
+	set transaction isolation level serializable
 
-	SELECT @idPost = USERID, @idUser = POSTID, @isLike = ISLIKE, @deviceIp = DEVICEIP, @dateTime = INTERECTIONDATETIME
+	begin tran;
+
+	SELECT @idPost = POSTID, @idUser = USERID, @isLike = ISLIKE, @deviceId = DIVICEID ,@deviceIp = DEVICEIP, @dateTime = INTERACTIONDATETIME
 	FROM inserted
 
 	select @idFriend = USERID
@@ -211,24 +219,95 @@ DECLARE @idPost int,
 	from INTERACTION 
 	where POSTID  = @idPost and USERID = @idUser
 
-	if (@interactionRegister is null and @qty = 1)
+	select @cantidadM = COUNT(1) 
+	from INTERACTION
+	where ISLIKE = 1 and POSTID = @idPost
+					
+
+	select @cantidadN = COUNT(1) 
+	from INTERACTION
+	where ISLIKE = 0 and POSTID = @idPost
+
+	if (@interactionRegister = 0 and @qty = 1)
 	begin
-		insert into INTERACTION values (@idUser,@idPost,@deviceIp,@dateTime,@isLike)
+		if(@isLike = 0)
+		begin 
+			if (@cantidadN <= @cantidadM)
+			begin 
+				insert into INTERACTION values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@isLike)
+				commit;
+			end
+			else
+			begin 
+				print 'La cantidad de me gusta no es sufienta para insertar un no me gusta'
+				commit;
+			end
+		end
+		else 
+		begin
+			insert into INTERACTION values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@isLike)
+			commit;
+		end 
 	end 
 	else
 	begin
-		if(@qty != 1)
+		if(@qty < 1)
 		begin 
 			print 'Los usuarios no son amigos'
+			commit;
 		end 
 		else 
 		begin 
-			print 'Ya existe una interaccion'
+			if(@interactionRegister = 1)
+			begin
+				select @tempInteraction = ISLIKE from INTERACTION where USERID = @idUser and POSTID = @idPost
+				if(@tempInteraction = @isLike)
+				begin
+						print 'Ya existe una interaccion'
+						commit;
+				end
+				else
+				begin
+					select @tempIdInteraction = INTERACTIONID
+					from INTERACTION 
+					where POSTID  = @idPost and USERID = @idUser
+					if(@isLike = 0)
+					begin
+						set @cantidadM = @cantidadM -1 
+						set @cantidadN = @cantidadN + 1
+						if (@cantidadN <= @cantidadM)
+						begin
+							update INTERACTION
+							set ISLIKE = @isLike, INTERACTIONDATETIME = GETDATE()
+							where INTERACTIONID = @tempIdInteraction
+							commit;
+						end 
+						else 
+						begin 
+							print 'No se puede actualizar ya que la cantidad de no me gusta es mayor a la de me gusta'
+							commit;
+						end
+					end
+					else
+					begin 
+						update INTERACTION
+						set ISLIKE = @isLike, INTERACTIONDATETIME = GETDATE()
+						where INTERACTIONID = @tempIdInteraction
+						commit;
+					end
+
+				end
+			end
+			else
+			begin
+				print 'Ya existe una interaccion'
+				commit;
+			end
 		end
 	end
 ----------------------------------------------------------------
 --trigger para verificar la insercion de los comentarios
-create or alter trigger Comments_tiCommentsValidation
+create or alter TRIGGER Comments_tiCommentsValidation
 on COMMENT 
 instead of insert 
 AS
@@ -241,14 +320,16 @@ DECLARE @idPost int,
 		@content varchar(200),
 		@deviceId int
 
+	set transaction isolation level serializable
+
+	begin tran;
+
 	SELECT @idPost = USERID, @idUser = POSTID,@deviceId = DEVICEID ,@deviceIp = DEVICEIP, @dateTime = COMMENTDATETIME, @content = COMMENTCONTENT
 	FROM inserted
 
 	select @idFriend = USERID
 	from POST
 	where POSTID = @idPost
-
-	print CAST(@idFriend as varchar)
 
 	select @qty = COUNT(1) 
 	from FRIENDSHIP
@@ -257,12 +338,22 @@ DECLARE @idPost int,
 
 	if (@qty = 1)
 	begin
-		insert into COMMENT values (@idPost,@idUser,@deviceId,@deviceIp,@dateTime,@content)
+		if((select COUNT(1) from "COMMENT" where POSTID = @idPost and ACTIVESTATUS = 1) >= 3)
+		begin 
+			insert into COMMENT values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@content,0)
+			commit;
+		end
+		else 
+		begin 
+			insert into COMMENT values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@content,1)
+			commit;
+		end
 	end 
 	else
 	begin
 		 
-		 print 'No se puede realizar la accion'
+		 print 'They are not friends'
+		 commit;
 	end
 ----------------------------------------------------------------
 --Procedure to add one to max_friends of users that have posts
@@ -302,8 +393,8 @@ as
 	deallocate c_inc_friends
 -------------------------------------------------------------------------
 -- procedimiento para las inserciones de interaciones(comentario o likes)
--- si like o dislike es nulo y el contenido del comentario no lo es inserta el comentario si es al reves inseta un like o dislile
-create or alter procedure Interacton_upsinsertion
+-- si like o dislike es nulo y el contenido del comentario no, lo es inserta el comentario si es al reves inseta un like o dislile
+ create or alter procedure Interacton_upsinsertion
 @pUserId int, 
 @pPostId int,
 @pDeviceId int,
@@ -314,57 +405,11 @@ as
 begin
 	if(@pIsLike is not null and @pComment is null)
 	begin
-				if(@pIsLike = 0)
-				begin
-					set transaction isolation level serializable
-
-					begin tran;
-
-					declare @cantidadM int
-					declare @cantidadN int 
-
-					select @cantidadM = COUNT(1) 
-					from INTERACTION
-					where ISLIKE = 1 and POSTID = @pPostId
-					
-
-					select @cantidadN = COUNT(1) 
-					from INTERACTION
-					where ISLIKE = 0 and POSTID = @pPostId
-					
-
-					if (@cantidadN < @cantidadM)
-					begin 
-						insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
-						commit;
-					end 
-					else
-					begin
-						print 'La cantidad de me gusta no es sufienta para insertar un no me gusta'
-						commit;
-					end 
-				end
-				else
-				begin
-					insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
-				end 
+		insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
 	end
 	else
 	begin
-				set transaction isolation level serializable
-
-				begin tran;
-
-				if((select COUNT(1) from "COMMENT" where POSTID = 1 and ACTIVE = 1) >= 3)
-				begin
-					INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,0)
-					commit;
-				end
-				else
-				begin 
-					INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,1)
-					commit;
-				end
+		INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,0)
 	end 
 
 end 
