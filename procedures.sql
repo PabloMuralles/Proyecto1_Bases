@@ -166,12 +166,12 @@ as
 		begin tran
 		select @postid = POSTID from COMMENT where COMMENTID = @commentid
 		delete from COMMENT where COMMENTID = @commentid
-		select top 1 @newcomment = COMMENTID from COMMENT where (status = 0) and POSTID = @postid order by COMMENTDATETIME desc
+		select top 1 @newcomment = COMMENTID from COMMENT where (ACTIVESTATUS = 0) and POSTID = @postid order by COMMENTDATETIME desc
 		commit
 		
 		if (@newcomment is not NULL)
 		begin
-			update COMMENT set STATUS = 1 where COMMENTID = @newcomment
+			update COMMENT set ACTIVESTATUS = 1 where COMMENTID = @newcomment
 		end	
 	end
 
