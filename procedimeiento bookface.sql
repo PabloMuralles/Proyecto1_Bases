@@ -9,57 +9,11 @@ as
 begin
 	if(@pIsLike is not null and @pComment is null)
 	begin
-				if(@pIsLike = 0)
-				begin
-					set transaction isolation level serializable
-
-					begin tran;
-
-					declare @cantidadM int
-					declare @cantidadN int 
-
-					select @cantidadM = COUNT(1) 
-					from INTERACTION
-					where ISLIKE = 1 and POSTID = @pPostId
-					
-
-					select @cantidadN = COUNT(1) 
-					from INTERACTION
-					where ISLIKE = 0 and POSTID = @pPostId
-					
-
-					if (@cantidadN < @cantidadM)
-					begin 
-						insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
-						commit;
-					end 
-					else
-					begin
-						print 'La cantidad de me gusta no es sufienta para insertar un no me gusta'
-						commit;
-					end 
-				end
-				else
-				begin
-					insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
-				end 
+		insert into INTERACTION values (@pUserId,@pPostId,@pDeviceId,@pDeviceIp, GETDATE(), @pIsLike)
 	end
 	else
 	begin
-				set transaction isolation level serializable
-
-				begin tran;
-
-				if((select COUNT(1) from "COMMENT" where POSTID = 1 and ACTIVE = 1) >= 3)
-				begin
-					INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,0)
-					commit;
-				end
-				else
-				begin 
-					INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,1)
-					commit;
-				end
+		INSERT INTO COMMENT VALUES(@pPostId,@pUserId,@pDeviceId,@pDeviceIp,GETDATE(),@pComment,0)
 	end 
 
 end 
@@ -95,10 +49,35 @@ where ISLIKE = 0 and POSTID = 1
 --group by POSTID
 
 delete from INTERACTION
+
+exec Interacton_upsinsertion 2,2,1,'223dfh',1,null
+
+exec Interacton_upsinsertion 2,2,1,'fasdfm12',1,null
+
+exec Interacton_upsinsertion 3,2,1,'fasdfm12',0,null
+
+exec Interacton_upsinsertion 3,2,1,'fasdfm12',1,null
+
+exec Interacton_upsinsertion 4,2,1,'fasdfm12',0,null
+
+exec Interacton_upsinsertion 4,2,1,'fasdfm12',1,null
+
+exec Interacton_upsinsertion  
 --- preguntarle a fercho si en las inserciones normales se tiene que hacer un triggre para validar eso----si
 -- preguntar si son dos procedimientos uno para likes y otro para comentarios---no
 -- que informacion debe de llevar los likes -- igual que los comentario 
 
+select * from POST where POSTID = 2
+
+select * from FRIENDSHIP where USERID = 45
+
+insert into FRIENDSHIP values (78,4)
+
+delete from FRIENDSHIP where FRIENDSHIPID = 11
+
+select * from INTERACTION 
+
+select ISLIKE from INTERACTION where USERID = 3 and POSTID = 2
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 ---- actualizar para que cuando se meta la interacion opuesta del mismo usuario solo se actulice
@@ -110,13 +89,21 @@ DECLARE @idPost int,
         @idUser int,
 		@isLike bit,
         @interactionRegister int,
+		@deviceId int,
 		@deviceIp varchar(15),
 		@dateTime datetime,
 		@idFriend int,
-		@qty int
+		@qty int,
+		@cantidadM int,
+		@cantidadN int,
+		@tempInteraction bit,
+		@tempIdInteraction int
 
+	set transaction isolation level serializable
 
-	SELECT @idPost = USERID, @idUser = POSTID, @isLike = ISLIKE, @deviceIp = DEVICEIP, @dateTime = INTERECTIONDATETIME
+	begin tran;
+
+	SELECT @idPost = POSTID, @idUser = USERID, @isLike = ISLIKE, @deviceId = DIVICEID ,@deviceIp = DEVICEIP, @dateTime = INTERACTIONDATETIME
 	FROM inserted
 
 	select @idFriend = USERID
@@ -132,19 +119,90 @@ DECLARE @idPost int,
 	from INTERACTION 
 	where POSTID  = @idPost and USERID = @idUser
 
+	select @cantidadM = COUNT(1) 
+	from INTERACTION
+	where ISLIKE = 1 and POSTID = @idPost
+					
+
+	select @cantidadN = COUNT(1) 
+	from INTERACTION
+	where ISLIKE = 0 and POSTID = @idPost
+
 	if (@interactionRegister = 0 and @qty = 1)
 	begin
-		insert into INTERACTION values (@idUser,@idPost,@deviceIp,@dateTime,@isLike)
+		if(@isLike = 0)
+		begin 
+			if (@cantidadN <= @cantidadM)
+			begin 
+				insert into INTERACTION values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@isLike)
+				commit;
+			end
+			else
+			begin 
+				print 'La cantidad de me gusta no es sufienta para insertar un no me gusta'
+				commit;
+			end
+		end
+		else 
+		begin
+			insert into INTERACTION values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@isLike)
+			commit;
+		end 
 	end 
 	else
 	begin
-		if(@qty != 1)
+		if(@qty < 1)
 		begin 
 			print 'Los usuarios no son amigos'
+			commit;
 		end 
 		else 
 		begin 
-			print 'Ya existe una interaccion'
+			if(@interactionRegister = 1)
+			begin
+				select @tempInteraction = ISLIKE from INTERACTION where USERID = @idUser and POSTID = @idPost
+				if(@tempInteraction = @isLike)
+				begin
+						print 'Ya existe una interaccion'
+						commit;
+				end
+				else
+				begin
+					select @tempIdInteraction = INTERACTIONID
+					from INTERACTION 
+					where POSTID  = @idPost and USERID = @idUser
+					if(@isLike = 0)
+					begin
+						set @cantidadM = @cantidadM -1 
+						set @cantidadN = @cantidadN + 1
+						if (@cantidadN <= @cantidadM)
+						begin
+							update INTERACTION
+							set ISLIKE = @isLike, INTERACTIONDATETIME = GETDATE()
+							where INTERACTIONID = @tempIdInteraction
+							commit;
+						end 
+						else 
+						begin 
+							print 'No se puede actualizar ya que la cantidad de no me gusta es mayor a la de me gusta'
+							commit;
+						end
+					end
+					else
+					begin 
+						update INTERACTION
+						set ISLIKE = @isLike, INTERACTIONDATETIME = GETDATE()
+						where INTERACTIONID = @tempIdInteraction
+						commit;
+					end
+
+				end
+			end
+			else
+			begin
+				print 'Ya existe una interaccion'
+				commit;
+			end
 		end
 	end
 
@@ -178,14 +236,16 @@ DECLARE @idPost int,
 		@content varchar(200),
 		@deviceId int
 
+	set transaction isolation level serializable
+
+	begin tran;
+
 	SELECT @idPost = USERID, @idUser = POSTID,@deviceId = DEVICEID ,@deviceIp = DEVICEIP, @dateTime = COMMENTDATETIME, @content = COMMENTCONTENT
 	FROM inserted
 
 	select @idFriend = USERID
 	from POST
 	where POSTID = @idPost
-
-	print CAST(@idFriend as varchar)
 
 	select @qty = COUNT(1) 
 	from FRIENDSHIP
@@ -194,12 +254,22 @@ DECLARE @idPost int,
 
 	if (@qty = 1)
 	begin
-		insert into COMMENT values (@idPost,@idUser,@deviceId,@deviceIp,@dateTime,@content)
+		if((select COUNT(1) from "COMMENT" where POSTID = 1 and ACTIVESTATUS = 1) >= 3)
+		begin 
+			insert into COMMENT values (@idPost,@idUser,@deviceId,@deviceIp,@dateTime,@content,0)
+			commit;
+		end
+		else 
+		begin 
+			insert into COMMENT values (@idPost,@idUser,@deviceId,@deviceIp,@dateTime,@content,1)
+			commit;
+		end
 	end 
 	else
 	begin
 		 
-		 print 'No se puede realizar la accion'
+		 print 'They are not friends'
+		 commit;
 	end
 
 -----------------------------
