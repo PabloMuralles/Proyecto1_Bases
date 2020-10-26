@@ -37,20 +37,20 @@ as
 	begin tran
 	select @cont = COUNT(*) from "USER"
 	where FIRSTLASTNAME = @lastname
-	commit
+	 
 
 	if (@cont = 2)
 	begin		
 		insert into FRIENDSHIP values ((select USERID from "USER" where FIRSTLASTNAME = @lastname and USERID != @userid),@userid)
+		 
 	end
 	
 	else if (@cont > 2)
 	begin
 		drop table if exists temp
 		
-		begin tran
 		select * into temp from "USER" where FIRSTLASTNAME = @lastname and USERID != @userid
-		commit
+		
 		declare @id int
 		declare c_create_friendship cursor for 
 		select USERID from temp
@@ -65,6 +65,7 @@ as
 		close c_create_friendship
 		deallocate c_create_friendship
 	end
+	commit;
 GO
 ----------------------------------------------------------------
 --Trigger to verify if a friendship already exists,
@@ -244,18 +245,15 @@ DECLARE @idPost int,
 			if (@cantidadN <= @cantidadM)
 			begin 
 				insert into INTERACTION values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@isLike)
-				commit;
 			end
 			else
 			begin 
 				print 'La cantidad de me gusta no es sufienta para insertar un no me gusta'
-				commit;
 			end
 		end
 		else 
 		begin
 			insert into INTERACTION values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@isLike)
-			commit;
 		end 
 	end 
 	else
@@ -263,7 +261,6 @@ DECLARE @idPost int,
 		if(@qty < 1)
 		begin 
 			print 'Los usuarios no son amigos'
-			commit;
 		end 
 		else 
 		begin 
@@ -273,7 +270,6 @@ DECLARE @idPost int,
 				if(@tempInteraction = @isLike)
 				begin
 						print 'Ya existe una interaccion'
-						commit;
 				end
 				else
 				begin
@@ -289,12 +285,10 @@ DECLARE @idPost int,
 							update INTERACTION
 							set ISLIKE = @isLike, INTERACTIONDATETIME = GETDATE()
 							where INTERACTIONID = @tempIdInteraction
-							commit;
 						end 
 						else 
 						begin 
 							print 'No se puede actualizar ya que la cantidad de no me gusta es mayor a la de me gusta'
-							commit;
 						end
 					end
 					else
@@ -302,7 +296,6 @@ DECLARE @idPost int,
 						update INTERACTION
 						set ISLIKE = @isLike, INTERACTIONDATETIME = GETDATE()
 						where INTERACTIONID = @tempIdInteraction
-						commit;
 					end
 
 				end
@@ -310,10 +303,10 @@ DECLARE @idPost int,
 			else
 			begin
 				print 'Ya existe una interaccion'
-				commit;
 			end
 		end
 	end
+	commit;
 GO
 ----------------------------------------------------------------
 --trigger para verificar la insercion de los comentarios
@@ -351,20 +344,17 @@ DECLARE @idPost int,
 		if((select COUNT(1) from "COMMENT" where POSTID = @idPost and ACTIVESTATUS = 1) >= 3)
 		begin 
 			insert into COMMENT values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@content,0)
-			commit;
 		end
 		else 
 		begin 
 			insert into COMMENT values (@idUser,@idPost,@deviceId,@deviceIp,@dateTime,@content,1)
-			commit;
 		end
 	end 
 	else
 	begin
-		 
 		 print 'They are not friends'
-		 commit;
 	end
+	commit;
 GO
 ----------------------------------------------------------------
 --Procedure to add one to max_friends of users that have posts
