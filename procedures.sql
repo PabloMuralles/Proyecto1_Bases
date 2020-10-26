@@ -1,3 +1,6 @@
+use BookFace
+go
+----------------------------------------------------------------
 --Procedure to import data from a csv file
 create or alter procedure usp_insert_from_csv
 @path varchar(100)
