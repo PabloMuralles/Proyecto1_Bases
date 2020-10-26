@@ -116,7 +116,7 @@ begin
 	end 
 end 
 ----------------------------------------------------------------------------------------
-create Procedure details_max_post
+create or Alter Procedure details_max_post
 As 
 select P.POSTID, P.USERID , P.TYPEID , P.DEVICEID ,P.DEVICEIP 
 From POST P  Inner Join 
