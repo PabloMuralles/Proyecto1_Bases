@@ -21,6 +21,9 @@
 --drop table if exists "USER";
 
 create database BookFace
+go
+use BookFace
+go
 
 /*==============================================================*/
 /* Table: "COMMENT"                                             */
