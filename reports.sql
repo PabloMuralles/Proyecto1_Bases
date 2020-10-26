@@ -19,6 +19,7 @@ begin
 		print 'No se han registrado nuevos usuarios en el día.'
 	end	
 end
+GO
 ----------------------------------------------------------------
 --Reports likes between two dates, and if they are not specified
 --the report is from current day
@@ -42,6 +43,7 @@ begin
     from INTERACTION
     where (POSTID = @postID) and (INTERACTIONDATETIME between @startDate and @endDate)
 end
+GO
 --------------------------------------------------------------------------
 --Reporte de la cantidad de post que llegaron a su cantidad maxima de comentarios en base a un año se desplica cantidad por cada mes del mismo 
 --parametros: @pYear año en el que se desea saber los reportes del mes y si se envia nulo se toma el año en el que se encuentra
@@ -115,6 +117,7 @@ begin
 		 select * from SUMMARYPOST
 	end 
 end 
+GO
 ----------------------------------------------------------------------------------------
 create or Alter Procedure details_max_post
 As 
@@ -124,4 +127,5 @@ From POST P  Inner Join
 	 on P.POSTID = I.POSTID 
 GROUP By P.POSTID, P.USERID , P.TYPEID , P.DEVICEID ,P.DEVICEIP
 HAVING(SUM(CAST(I.Islike AS INT)) >= 15)
+GO
 ------------------------------------------------------------------------------------------
