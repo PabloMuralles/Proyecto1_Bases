@@ -28,17 +28,17 @@ as
 	declare @lastname varchar(50)
 	declare @cont int
 
-	select @userid = USERID, @lastname = LASTNAME from inserted
+	select @userid = USERID, @lastname = FIRSTLASTNAME from inserted
 	
 	set transaction isolation level serializable;
 	begin tran
 	select @cont = COUNT(*) from "USER"
-	where LASTNAME = @lastname
+	where FIRSTLASTNAME = @lastname
 	commit
 
 	if (@cont = 2)
 	begin		
-		insert into FRIENDSHIP values ((select USERID from "USER" where LASTNAME = @lastname and USERID != @userid),@userid)
+		insert into FRIENDSHIP values ((select USERID from "USER" where FIRSTLASTNAME = @lastname and USERID != @userid),@userid)
 	end
 	
 	else if (@cont > 2)
@@ -46,7 +46,7 @@ as
 		drop table if exists temp
 		
 		begin tran
-		select * into temp from "USER" where LASTNAME = @lastname and USERID != @userid
+		select * into temp from "USER" where FIRSTLASTNAME = @lastname and USERID != @userid
 		commit
 		declare @id int
 		declare c_create_friendship cursor for 
