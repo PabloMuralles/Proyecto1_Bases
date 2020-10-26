@@ -116,3 +116,10 @@ begin
 	end 
 end 
 ----------------------------------------------------------------------------------------
+select P.POSTID, P.USERID , P.TYPEID , P.DEVICEID ,P.DEVICEIP 
+From POST P  Inner Join 
+     INTERACTION I 
+	 on P.POSTID = I.POSTID 
+GROUP By P.POSTID, P.USERID , P.TYPEID , P.DEVICEID ,P.DEVICEIP
+HAVING(SUM(CAST(I.Islike AS INT)) >= 15)
+------------------------------------------------------------------------------------------
