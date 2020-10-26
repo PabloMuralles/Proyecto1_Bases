@@ -16,6 +16,7 @@ begin
 
 	exec(@bulk_exec)
 end
+GO
 ----------------------------------------------------------------
 --Trigger to create friendship relations within the new user and
 --all of users that have the same lastname
@@ -61,6 +62,7 @@ as
 		close c_create_friendship
 		deallocate c_create_friendship
 	end
+GO
 ----------------------------------------------------------------
 --Trigger to verify if a friendship already exists,
 --if it does the friendship is not inserted
@@ -89,6 +91,7 @@ as
 	begin
 		print 'El usuario ' + CAST(@user1 as varchar) + ' y el usuario ' +CAST(@user2 as varchar) + ' ya son amigos.'
 	end
+GO
 ----------------------------------------------------------------
 --Procedure to create a random number of posts
 --for a random number of random users
@@ -139,6 +142,7 @@ begin
 		select @cont1 = @cont1 + 1
 	end
 end
+GO
 ----------------------------------------------------------------
 --Procedure to delete a comment
 create or alter procedure csp_delete_comment
@@ -147,7 +151,8 @@ as
 begin
 	delete from COMMENT where COMMENTID = @commentid
 end
-
+GO
+----------------------------------------------------------------------
 --Trigger to update selected queued comments to active
 create or alter trigger ct_queue_comments
 on COMMENT
@@ -179,6 +184,7 @@ as
 	begin
 		print 'El comentario ' + CAST(@commentid as varchar) + ' no existe.'
 	end
+GO
 ----------------------------------------------------------------
 --trigger para validar las inserciones de las interacciones
   create or alter TRIGGER Interaction_tiInteractionValidation
@@ -203,7 +209,7 @@ DECLARE @idPost int,
 
 	begin tran;
 
-	SELECT @idPost = POSTID, @idUser = USERID, @isLike = ISLIKE, @deviceId = DIVICEID ,@deviceIp = DEVICEIP, @dateTime = INTERACTIONDATETIME
+	SELECT @idPost = POSTID, @idUser = USERID, @isLike = ISLIKE, @deviceId = DEVICEID ,@deviceIp = DEVICEIP, @dateTime = INTERACTIONDATETIME
 	FROM inserted
 
 	select @idFriend = USERID
@@ -305,6 +311,7 @@ DECLARE @idPost int,
 			end
 		end
 	end
+GO
 ----------------------------------------------------------------
 --trigger para verificar la insercion de los comentarios
 create or alter TRIGGER Comments_tiCommentsValidation
@@ -355,6 +362,7 @@ DECLARE @idPost int,
 		 print 'They are not friends'
 		 commit;
 	end
+GO
 ----------------------------------------------------------------
 --Procedure to add one to max_friends of users that have posts
 --with 15 likes or more in a given day
@@ -391,6 +399,7 @@ as
 	drop table temp2
 	close c_inc_friends
 	deallocate c_inc_friends
+GO
 -------------------------------------------------------------------------
 -- procedimiento para las inserciones de interaciones(comentario o likes)
 -- si like o dislike es nulo y el contenido del comentario no, lo es inserta el comentario si es al reves inseta un like o dislile
@@ -413,3 +422,4 @@ begin
 	end 
 
 end 
+GO
