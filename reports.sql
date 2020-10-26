@@ -1,3 +1,6 @@
+use BookFace
+go
+----------------------------------------------------------------
 --Procedure to report daily users gain and increase percentage
 create or alter procedure pu_daily_users_gain
 as
