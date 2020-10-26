@@ -28,9 +28,12 @@ as
 	declare @cont int
 
 	select @userid = USERID, @lastname = LASTNAME from inserted
-
+	
+	set transaction isolation level serializable;
+	begin tran
 	select @cont = COUNT(*) from "USER"
 	where LASTNAME = @lastname
+	commit
 
 	if (@cont = 2)
 	begin		
@@ -40,20 +43,23 @@ as
 	else if (@cont > 2)
 	begin
 		drop table if exists temp
+		
+		begin tran
 		select * into temp from "USER" where LASTNAME = @lastname and USERID != @userid
-			declare @id int
-			declare c_create_friendship cursor for 
-			select USERID from temp
-			open c_create_friendship
-			fetch c_create_friendship into @id
-			while (@@FETCH_STATUS = 0)
-			begin
-				insert into FRIENDSHIP values (@id,@userid)
-				FETCH NEXT FROM c_create_friendship into @id
-			end
-			drop table temp
-			close c_create_friendship
-			deallocate c_create_friendship
+		commit
+		declare @id int
+		declare c_create_friendship cursor for 
+		select USERID from temp
+		open c_create_friendship
+		fetch c_create_friendship into @id
+		while (@@FETCH_STATUS = 0)
+		begin
+			insert into FRIENDSHIP values (@id,@userid)
+			FETCH NEXT FROM c_create_friendship into @id
+		end
+		drop table temp
+		close c_create_friendship
+		deallocate c_create_friendship
 	end
 ----------------------------------------------------------------
 --Trigger to verify if a friendship already exists,
@@ -68,9 +74,12 @@ as
 
 	select @user1 = USERID, @user2 = FRIENDID from inserted
 
+	set transaction isolation level serializable;
+	begin tran
 	select @cont = COUNT(*) from FRIENDSHIP
 	where (USERID = @user1 and FRIENDID = @user2) or (USERID = @user2 and FRIENDID = @user1)
-
+	commit
+	
 	if (@cont = 0)
 	begin		
 		insert into FRIENDSHIP values (@user1,@user2)
@@ -95,7 +104,10 @@ declare @deviceid int
 begin
 	select @cont1 = 0
 	select @cont2 = 0
+	set transaction isolation level serializable;
+	begin tran
 	select @total_users = COUNT(*) from "USER"
+	commit
 	select @random1 = FLOOR(RAND()*(@total_users))+1;
 	select @random2 = FLOOR(RAND()*(20))+1;
 	print @random1
@@ -104,27 +116,27 @@ begin
 
 	while @cont1 != @random1
 	begin
-			select top 1 @userid = USERID from "USER" order by NEWID()
+		begin tran
+		select top 1 @userid = USERID from "USER" order by NEWID()
 			
-			while @cont2 != @random2
+		while @cont2 != @random2
+		begin
+			select top 1 @deviceid = DEVICEID from DEVICE order by NEWID()
+			insert into POST values (@userid,1,@deviceid,'255.255.255.255',GETDATE(),'Post generado aleatoriamente :)')
+			select @cont2 = @cont2 + 1
+
+			if @@ERROR <> 0
 			begin
-					begin tran
-					select top 1 @deviceid = DEVICEID from DEVICE order by NEWID()
-					insert into POST values (@userid,1,@deviceid,'255.255.255.255',GETDATE(),'Post generado aleatoriamente :)')
-					select @cont2 = @cont2 + 1
-
-					if @@ERROR <> 0
-					begin
-							print 'No se pudo realizar la transacción.'
-							rollback
-					end
-
-					else
-					begin
-							commit
-					end
+					print 'No se pudo realizar la transacción.'
+					rollback
 			end
-			select @cont1 = @cont1 + 1
+
+			else
+			begin
+					commit
+			end
+		end
+		select @cont1 = @cont1 + 1
 	end
 end
 ----------------------------------------------------------------
@@ -150,10 +162,13 @@ as
 
 	if (@commentid is not NULL)
 	begin
+		set transaction isolation level serializable;
+		begin tran
 		select @postid = POSTID from COMMENT where COMMENTID = @commentid
 		delete from COMMENT where COMMENTID = @commentid
 		select top 1 @newcomment = COMMENTID from COMMENT where (status = 0) and POSTID = @postid order by COMMENTDATETIME desc
-
+		commit
+		
 		if (@newcomment is not NULL)
 		begin
 			update COMMENT set STATUS = 1 where COMMENTID = @newcomment
@@ -258,12 +273,16 @@ as
 	declare @maxfriends int
 
 	drop table if exists temp2
+	
+	set transaction isolation level serializable;
+	begin tran
 	select U.USERID, U.MAXFRIENDS into temp2 from "USER" U
 	inner join POST P on P.USERID = U.USERID
 	inner join INTERACTION I on I.POSTID = P.POSTID
 	where (DAY(P.POSTDATETIME) = DAY(GETDATE())) and (I.ISLIKE = 1)
 	group by U.USERID, U.MAXFRIENDS, P.POSTID
 	having COUNT(P.POSTID) >= 15
+	commit
 	
 	declare c_inc_friends cursor for 
 	select USERID from temp2
@@ -271,10 +290,12 @@ as
 	fetch c_inc_friends into @userid
 	while (@@FETCH_STATUS = 0)
 		begin
+			begin tran
 			select @maxfriends = MAXFRIENDS from "USER" where USERID = @userid
 			update "USER" set MAXFRIENDS = @maxfriends + 1
 			where USERID = @userid
 			FETCH NEXT FROM c_inc_friends into @userid
+			commit
 		end
 	drop table temp2
 	close c_inc_friends
