@@ -4,21 +4,21 @@
 /*==============================================================*/
 
 
-drop database if exists BookFace
+--drop database if exists BookFace
 
-drop table if exists "COMMENT";
+--drop table if exists "COMMENT";
 
-drop table if exists DEVICE;
+--drop table if exists DEVICE;
 
-drop table if exists FRIENSHIP;
+--drop table if exists FRIENSHIP;
 
-drop table if exists INTERACTION;
+--drop table if exists INTERACTION;
 
-drop table if exists POST;
+--drop table if exists POST;
 
-drop table if exists TYPE;
+--drop table if exists TYPE;
 
-drop table if exists "USER";
+--drop table if exists "USER";
 
 create database BookFace
 
@@ -165,6 +165,3 @@ alter table POST
 alter table INTERACTION
    add constraint FK_INTERACT_REFERENCE_DEVICE foreign key (DEVICEID)
       references DEVICE (DEVICEID)
-  
-
-
